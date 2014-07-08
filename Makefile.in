@@ -121,6 +121,7 @@ clean:
 distclean: clean
 	rm -f Makefile config.h config.status
 	rm -rf autom4te.cache
+	rm -rf .depend
 
 ifeq (.depend,$(wildcard .depend))
 include .depend
