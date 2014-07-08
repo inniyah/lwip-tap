@@ -30,10 +30,9 @@ sbindir = $(exec_prefix)/sbin
 libexecdir = $(exec_prefix)/libexec
 datadir = $(prefix)/share
 
-IP_VERSION = 4
 CC = @CC@
 CPPFLAGS = @DEFS@ -I. -Ilwip-contrib/ports/unix/include \
-  -Ilwip/src/include/ipv$(IP_VERSION) -Ilwip/src/include \
+  -Ilwip/src/include/ipv4 -Ilwip/src/include/ipv6 -Ilwip/src/include \
   -Ilwip-contrib/apps/chargen -Ilwip-contrib/apps/httpserver \
   -Ilwip-contrib/apps/tcpecho -Ilwip-contrib/apps/udpecho @CPPFLAGS@
 CFLAGS = -pthread -Wall @CFLAGS@
@@ -47,11 +46,13 @@ SOURCES = \
   lwip/src/api/netbuf.c \
   lwip/src/api/netdb.c \
   lwip/src/api/netifapi.c \
+  lwip/src/api/pppapi.c \
   lwip/src/api/sockets.c \
   lwip/src/api/tcpip.c \
   lwip/src/core/def.c \
   lwip/src/core/dhcp.c \
   lwip/src/core/dns.c \
+  lwip/src/core/inet_chksum.c \
   lwip/src/core/init.c \
   lwip/src/core/mem.c \
   lwip/src/core/memp.c \
@@ -68,11 +69,18 @@ SOURCES = \
   lwip/src/core/ipv4/autoip.c \
   lwip/src/core/ipv4/icmp.c \
   lwip/src/core/ipv4/igmp.c \
-  lwip/src/core/ipv4/inet.c \
-  lwip/src/core/ipv4/inet_chksum.c \
-  lwip/src/core/ipv4/ip.c \
-  lwip/src/core/ipv4/ip_addr.c \
+  lwip/src/core/ipv4/ip4.c \
+  lwip/src/core/ipv4/ip4_addr.c \
   lwip/src/core/ipv4/ip_frag.c \
+  lwip/src/core/ipv6/inet6.c \
+  lwip/src/core/ipv6/dhcp6.c \
+  lwip/src/core/ipv6/ip6_frag.c \
+  lwip/src/core/ipv6/ethip6.c \
+  lwip/src/core/ipv6/nd6.c \
+  lwip/src/core/ipv6/mld6.c \
+  lwip/src/core/ipv6/ip6_addr.c \
+  lwip/src/core/ipv6/icmp6.c \
+  lwip/src/core/ipv6/ip6.c \
   lwip/src/core/snmp/asn1_dec.c \
   lwip/src/core/snmp/asn1_enc.c \
   lwip/src/core/snmp/mib2.c \
@@ -80,6 +88,8 @@ SOURCES = \
   lwip/src/core/snmp/msg_in.c \
   lwip/src/core/snmp/msg_out.c \
   lwip/src/netif/etharp.c \
+  lwip/src/netif/ethernetif.c \
+  lwip/src/netif/slipif.c \
   lwip-contrib/ports/unix/sys_arch.c \
   lwip-contrib/apps/chargen/chargen.c \
   lwip-contrib/apps/httpserver/httpserver-netconn.c \
@@ -88,23 +98,32 @@ SOURCES = \
   tapif.c \
   lwip-tap.c
 
-OBJS := $(foreach f,$(SOURCES),$(notdir $(f:.c=.o)))
-%.o:
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
-.PHONY: all check-syntax depend dep clean distclean
+OBJS := $(SOURCES:.c=.o)
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+
 all: lwip-tap
+
 lwip-tap: $(OBJS)
 	$(CC) $(LDFLAGS) $(LIBS) -o lwip-tap $(OBJS)
+
 check-syntax:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -fsyntax-only $(CHK_SOURCES)
+
 depend dep:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MM $(SOURCES) >.depend
+
 clean:
 	rm -f config.cache config.log
 	rm -f lwip-tap $(OBJS) *~
+
 distclean: clean
 	rm -f Makefile config.h config.status
 	rm -rf autom4te.cache
+
 ifeq (.depend,$(wildcard .depend))
 include .depend
 endif
+
+.PHONY: all check-syntax depend dep clean distclean
