@@ -105,13 +105,13 @@ OBJS := $(SOURCES:.c=.o)
 
 all: lwip-tap
 
-lwip-tap: $(OBJS)
+lwip-tap: .depend $(OBJS)
 	$(CC) $(LDFLAGS) $(LIBS) -o lwip-tap $(OBJS)
 
 check-syntax:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -fsyntax-only $(CHK_SOURCES)
 
-depend dep:
+.depend depend dep:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MM $(SOURCES) >.depend
 
 clean:
