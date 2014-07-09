@@ -65,6 +65,13 @@ LIB_SOURCES = \
   tapif.c \
   debug_flags.c
 
+APP_SOURCES = \
+  lwip-contrib/apps/chargen/chargen.c \
+  lwip-contrib/apps/httpserver/httpserver-netconn.c \
+  lwip-contrib/apps/tcpecho/tcpecho.c \
+  lwip-contrib/apps/udpecho/udpecho.c \
+  lwip-tap.c
+
 LIB_SHARED_OBJS = $(LIB_SOURCES:.c=.shared.o)
 LIB_STATIC_OBJS = $(LIB_SOURCES:.c=.static.o)
 
@@ -86,10 +93,9 @@ SHARED_CFLAGS= $(STATIC_CFLAGS) -fPIC
 LDFLAGS= -Wl,-z,defs -Wl,--as-needed -Wl,--no-undefined
 LIBS=-lpthread
 
-lwip-tap: libraries lwip-tap.c
-	gcc $(STATIC_CFLAGS) -I. $(LDFLAGS) $(EXTRA_LDFLAGS) lwip-tap.c -o $@ -l$(LIBNAME) -L. $(LIBS) $(PKG_CONFIG_LIBS)
+lib libraries: $(LIBRARY).so $(LIBRARY).a
 
-libraries: $(LIBRARY).so $(LIBRARY).a
+app: lwip-tap
 
 $(LIBRARY).so.$(MAJOR).$(MINOR): $(LIB_SHARED_OBJS)
 	g++ $(LDFLAGS) $(EXTRA_LDFLAGS) -shared \
@@ -105,6 +111,9 @@ $(LIBRARY).so: $(LIBRARY).so.$(MAJOR).$(MINOR)
 
 $(LIBRARY).a: $(LIB_STATIC_OBJS)
 	ar cru $@ $+
+
+lwip-tap: libraries lwip-tap.c
+	gcc $(STATIC_CFLAGS) -I. $(LDFLAGS) $(EXTRA_LDFLAGS) $(APP_SOURCES) -o $@ -l$(LIBNAME) -L. $(LIBS) $(PKG_CONFIG_LIBS)
 
 %.shared.o: %.cpp
 	g++ -o $@ -c $+ $(SHARED_CFLAGS)
@@ -122,7 +131,8 @@ $(LIBRARY).a: $(LIB_STATIC_OBJS)
 	gcc -o $@ -c $+ $(STATIC_CFLAGS)
 
 .depend depend dep:
-	gcc $(SHARED_CFLAGS) -MM $(LIB_SOURCES) >.depend
+	gcc $(SHARED_CFLAGS) -MM $(LIB_SOURCES) >  .depend
+	gcc $(SHARED_CFLAGS) -MM $(APP_SOURCES) >> .depend
 
 clean:
 	rm -f $(LIB_SHARED_OBJS)
@@ -144,4 +154,4 @@ ifeq (.depend,$(wildcard .depend))
 include .depend
 endif
 
-.PHONY: all depend dep clean install
+.PHONY: all depend dep libraries lib app clean install
