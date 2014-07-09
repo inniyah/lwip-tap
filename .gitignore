@@ -1,2 +1,7 @@
 *.o
+*.a
+*.so
+*.so.*
+.depend
+lwip-tap
 *~
