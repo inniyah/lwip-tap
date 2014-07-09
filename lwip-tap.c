@@ -36,130 +36,13 @@
 #include "chargen.h"
 #include "httpserver-netconn.h"
 #include "tapif.h"
+#include "tapif_helpers.h"
 #include "tcpecho.h"
 #include "udpecho.h"
 
 #define NETIF_MAX 64
 
-int parse_address(char* addr,struct addrinfo* info,int family) {
-  struct addrinfo hints;
-  struct addrinfo *result;
-  struct addrinfo *r;
-  int res;
-
-  memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_UNSPEC;
-  hints.ai_socktype = 0;
-  hints.ai_protocol = 0;
-  hints.ai_flags = AI_NUMERICSERV;
-  res = getaddrinfo(addr,0,&hints,&result);
-  if (res != 0) {
-    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(res));
-    return -1;
-  }
-  for (r = result; r != NULL; r = r->ai_next) {
-    if (r->ai_family == family) {
-      *info = *r;
-      return 0;
-    }
-  }
-  return -1;
-}
-
-int
-parse_pair(struct tapif* tapif,char* key,char* value)
-{
-  struct addrinfo addr;
-  uint8_t* p;
-
-  if (key == 0 || *key == 0)
-    return -1;
-
-#define PARSE_IP4(ip_addr)                                        \
-  do {                                                            \
-    if (value == 0 || *value == 0)                                \
-      return -1;                                                  \
-    if (parse_address(value,&addr,AF_INET) != 0)                  \
-      return -1;                                                  \
-    p = (uint8_t*)&((struct sockaddr_in*)addr.ai_addr)->sin_addr; \
-    IP4_ADDR(&(ip_addr),*p,*(p+1),*(p+2),*(p+3));                 \
-    return 0;                                                     \
-  } while(0)
-
-  if (!strcmp(key,"name")) {
-    if (value == 0 || *value == 0)
-      return -1;
-    tapif->name = value;
-    return 0;
-  } else if (!strcmp(key,"addr")) {
-    PARSE_IP4(tapif->ip_addr);
-  } else if (!strcmp(key,"netmask")) {
-    PARSE_IP4(tapif->netmask);
-  } else if (!strcmp(key,"gw")) {
-    PARSE_IP4(tapif->gw);
-  } else {
-    return -1;
-  }
-}
-
-int
-parse_interface(struct tapif* tapif,char* param)
-{
-  enum {
-    KEY_WAIT, KEY, VALUE_WAIT, VALUE, END
-  };
-  int state = KEY_WAIT;
-  char* p = param;
-  char* key = 0;
-  char* value = 0;
-
-  while (state != END) {
-    switch (*p) {
-    case '\0':
-      if (parse_pair(tapif,key,value) != 0)
-        return -1;
-      state = END;
-      break;
-    case ',':
-      if (state == KEY_WAIT) {
-        p++;
-        break;
-      }
-      state = KEY_WAIT;
-      *p++ = 0;
-      if (parse_pair(tapif,key,value) != 0)
-        return -1;
-      key = value = 0;
-      break;
-    case '=':
-      if (state == KEY)
-        state = VALUE_WAIT;
-      else
-        return -1;
-      *p++ = 0;
-      break;
-    case ' ':
-      if (state != KEY_WAIT && state != VALUE_WAIT)
-        return -1;
-      p++;
-      break;
-    default:
-      if (state == KEY_WAIT) {
-        state = KEY;
-        key = p;
-      } else if (state == VALUE_WAIT) {
-        state = VALUE;
-        value = p;
-      }
-      p++;
-    }
-  }
-  return 0;
-}
-
-void
-help(void)
-{
+void help(void) {
 #ifdef LWIP_DEBUG
   fprintf(stderr,"Usage: lwip-tap [-CEHdh] -i addr=<addr>,netmask=<addr>,name=<name>,gw=<addr> [...]\n");
 #else
@@ -170,9 +53,7 @@ help(void)
 
 #define IP4_OR_NULL(ip_addr) ((ip_addr).addr == IPADDR_ANY ? 0 : &(ip_addr))
 
-int
-main(int argc,char *argv[])
-{
+int main(int argc, char *argv[]) {
   struct tapif tapif[NETIF_MAX];
   struct netif netif[NETIF_MAX];
   int ch;
@@ -233,8 +114,9 @@ main(int argc,char *argv[])
   }
   argc -= optind;
   argv += optind;
-  if (n <= 0)
-    help();
+  if (n <= 0) {
+      help();
+  }
   pause();
   return -1;
 }

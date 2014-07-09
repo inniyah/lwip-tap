@@ -63,6 +63,7 @@ LIB_SOURCES = \
   lwip-contrib/apps/tcpecho/tcpecho.c \
   lwip-contrib/apps/udpecho/udpecho.c \
   tapif.c \
+  tapif_helpers.c \
   debug_flags.c
 
 APP_SOURCES = \
