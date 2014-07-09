@@ -22,9 +22,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -34,14 +32,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "lwip/tcpip.h"
+#include "lwip/dhcp.h"
 #include "chargen.h"
 #include "httpserver-netconn.h"
 #include "tapif.h"
 #include "tcpecho.h"
 #include "udpecho.h"
-
-/* exported in lwipopts.h */
-unsigned char debug_flags = LWIP_DBG_OFF;
 
 #define NETIF_MAX 64
 
